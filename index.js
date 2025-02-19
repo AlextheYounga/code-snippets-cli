@@ -108,7 +108,7 @@ async function handleCreateNewFile() {
   const extension = filename.split('.').pop();
   const fullPath = path.join('repo', `${filename}.md`);
   if (!fs.existsSync(fullPath)) {
-    fs.writeFileSync(fullPath, '# New Document\n\n```' + extension + '\n\n```');
+    fs.writeFileSync(fullPath, '```' + extension + '\n\n```');
   }
 
   // Open nano editor, wait until user is done
