@@ -21,7 +21,11 @@ alexyounger$ codesnippets
   Exit
 ```
 
+
+All files are saved in Markdown format to avoid any weirdness of accidentally running the files, or to avoid debuggers picking up errors in these files unnecessarily. 
+
 Once you search by tags, it will compile all files that match those tags into a single stream using less:
+
 === repo/read_zip_file.py.md ===
 
 ```py
@@ -38,5 +42,3 @@ def read_zip_file(zip_path):
 ```
 
 (END)
-
-All files are saved in Markdown format to avoid any weirdness of accidentally running the files, or to avoid debuggers picking up errors in these files unnecessarily. 
