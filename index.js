@@ -48,6 +48,11 @@ async function mainMenu() {
       message: 'What do you want to do?',
       choices: [
         {
+          name: 'Search Files By Tags',
+          value: 'search',
+          description: 'Find files that match any of the given tags',
+        },
+        {
           name: 'Create File',
           value: 'create_file',
           description: 'Create new file with nano',
@@ -79,6 +84,9 @@ async function mainMenu() {
         break;
       case 'remove_tags':
         await handleRemoveTags();
+        break;
+      case 'search':
+        await handleSearchByTags();
         break;
       case 'exit':
         console.log('Goodbye!');
@@ -172,6 +180,64 @@ async function handleRemoveTags() {
     removeFileTag(fullPath, tag);
   });
   console.log(`Removed tags [${tagArray.join(', ')}] from ${filename}.md`);
+}
+
+/**
+ * Prompt for tags, search for matching files, then open their combined contents in `less`.
+ */
+async function handleSearchByTags() {
+  // 1. Ask user for comma-separated tags
+  const tagString = await inquirer.input({ message: 'Enter comma-separated tags to search for:' });
+  const tags = tagString.split(',').map(t => t.trim()).filter(Boolean);
+
+  if (tags.length === 0) {
+    console.log('No tags entered.');
+    return;
+  }
+
+  // 2. Find matching files in the DB
+  const matchingFiles = searchFilesByTags(tags);
+  if (matchingFiles.length === 0) {
+    console.log('No files found for those tags.');
+    return;
+  }
+
+  // 3. Read and concatenate contents
+  let combinedContents = '';
+  for (const file of matchingFiles) {
+    if (fs.existsSync(file.path)) {
+      const content = fs.readFileSync(file.path, 'utf8');
+      combinedContents += `=== ${file.path} ===\n\n${content}\n\n`;
+    } else {
+      combinedContents += `=== ${file.path} ===\n\nFile not found on disk.\n\n`;
+    }
+  }
+
+  // 4. Pipe to `less` so user can scroll, then press q to exit.
+  spawnSync('less', { input: combinedContents, stdio: ['pipe', 'inherit', 'inherit'] });
+}
+
+
+/**
+ * Given an array of tag names, returns an array of files that have ANY of those tags.
+ */
+function searchFilesByTags(tags) {
+  // Build a parameter list for the "IN" clause
+  const placeholders = tags.map(() => '?').join(', ');
+
+  // Query to find files that have any of the specified tags
+  const sql = `
+    SELECT DISTINCT f.path
+    FROM files f
+    JOIN file_tags ft ON f.id = ft.file_id
+    JOIN tags t      ON ft.tag_id = t.id
+    WHERE t.name IN (${placeholders})
+    ORDER BY f.path
+  `;
+
+  // Run the query and return the results
+  const rows = db.prepare(sql).all(...tags);
+  return rows; // Each row will have a "path" property
 }
 
 /**
