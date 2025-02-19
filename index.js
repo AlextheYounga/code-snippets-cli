@@ -6,8 +6,12 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
+// Get path to this repo
+const scriptPath = path.join(__dirname);
+
 // Open or create the database
-const db = new Database('db.sqlite');
+const dbUrl = path.join(scriptPath, 'db.sqlite');
+const db = new Database(dbUrl);
 
 // Run schema creation if needed
 initDB();
@@ -102,11 +106,11 @@ async function handleCreateNewFile() {
   const filename = await inquirer.input({ message: 'Enter file name with extension type' });
 
   // Ensure the repo directory exists
-  fs.mkdirSync('repo', { recursive: true });
+  fs.mkdirSync(path.join(scriptPath, 'repo'), { recursive: true });
 
   // Create the new .md file in repo if it doesn't exist
   const extension = filename.split('.').pop();
-  const fullPath = path.join('repo', `${filename}.md`);
+  const fullPath = path.join(scriptPath, 'repo', `${filename}.md`);
   if (!fs.existsSync(fullPath)) {
     fs.writeFileSync(fullPath, '```' + extension + '\n\n```');
   }
@@ -148,7 +152,7 @@ async function handleAddTags() {
   // Then get tags
   const tags = await inquirer.input({ message: 'Enter comma-separated tags to add:' });
 
-  const fullPath = path.join('repo', `${filename}.md`);
+  const fullPath = path.join(scriptPath, 'repo', `${filename}.md`);
   if (!fs.existsSync(fullPath)) {
     console.log('Error: That file does not exist in ./repo!');
     return;
@@ -169,7 +173,7 @@ async function handleRemoveTags() {
   const filename = await inquirer.input({ message: 'Enter file name without extension:' });
   const tags = await inquirer.input({ message: 'Enter comma-separated tags to add:' });
 
-  const fullPath = path.join('repo', `${filename}.md`);
+  const fullPath = path.join(scriptPath, 'repo', `${filename}.md`);
   if (!fs.existsSync(fullPath)) {
     console.log('Error: That file does not exist in ./repo!');
     return;
@@ -205,7 +209,7 @@ async function handleSearchByTags() {
   // 3. Read and concatenate contents
   let combinedContents = '';
   for (const file of matchingFiles) {
-    if (fs.existsSync(file.path)) {
+    if (fs.existsSync(path.join(scriptPath, file.path))) {
       const content = fs.readFileSync(file.path, 'utf8');
       combinedContents += `=== ${file.path} ===\n\n${content}\n\n`;
     } else {
