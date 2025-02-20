@@ -110,18 +110,18 @@ async function handleCreateNewFile() {
 
   // Create the new .md file in repo if it doesn't exist
   const extension = filename.split('.').pop();
-  const fullPath = path.join(scriptPath, 'repo', `${filename}.md`);
-  if (!fs.existsSync(fullPath)) {
-    fs.writeFileSync(fullPath, '```' + extension + '\n\n```');
+  const filepath = path.join('repo', `${filename}.md`);
+  if (!fs.existsSync(filepath)) {
+    fs.writeFileSync(filepath, '```' + extension + '\n\n```');
   }
 
   // Open nano editor, wait until user is done
-  spawnSync('nano', [fullPath], { stdio: 'inherit' });
+  spawnSync('nano', [filepath], { stdio: 'inherit' });
 
   // Check if the file was saved
-  if (fs.existsSync(fullPath)) {
+  if (fs.existsSync(filepath)) {
     // Insert file info into DB
-    insertFile(fullPath);
+    insertFile(filepath);
 
     // Prompt for tags
     const tags = await inquirer.input({ message: 'Enter comma-separated tags (or leave empty):' });
@@ -130,7 +130,7 @@ async function handleCreateNewFile() {
       const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean);
       tagArray.forEach(tag => {
         insertTagIfMissing(tag);
-        linkFileTag(fullPath, tag);
+        linkFileTag(filepath, tag);
       });
       console.log(`File "${filename}.md" tagged with: ${tagArray.join(', ')}`);
     } else {
@@ -152,8 +152,8 @@ async function handleAddTags() {
   // Then get tags
   const tags = await inquirer.input({ message: 'Enter comma-separated tags to add:' });
 
-  const fullPath = path.join(scriptPath, 'repo', `${filename}.md`);
-  if (!fs.existsSync(fullPath)) {
+  const filepath = path.join('repo', `${filename}.md`);
+  if (!fs.existsSync(filepath)) {
     console.log('Error: That file does not exist in ./repo!');
     return;
   }
@@ -161,7 +161,7 @@ async function handleAddTags() {
   const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean);
   tagArray.forEach(tag => {
     insertTagIfMissing(tag);
-    linkFileTag(fullPath, tag);
+    linkFileTag(filepath, tag);
   });
   console.log(`Added tags [${tagArray.join(', ')}] to ${filename}.md`);
 }
@@ -173,15 +173,15 @@ async function handleRemoveTags() {
   const filename = await inquirer.input({ message: 'Enter file name without extension:' });
   const tags = await inquirer.input({ message: 'Enter comma-separated tags to add:' });
 
-  const fullPath = path.join(scriptPath, 'repo', `${filename}.md`);
-  if (!fs.existsSync(fullPath)) {
+  const filepath = path.join('repo', `${filename}.md`);
+  if (!fs.existsSync(filepath)) {
     console.log('Error: That file does not exist in ./repo!');
     return;
   }
 
   const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean);
   tagArray.forEach(tag => {
-    removeFileTag(fullPath, tag);
+    removeFileTag(filepath, tag);
   });
   console.log(`Removed tags [${tagArray.join(', ')}] from ${filename}.md`);
 }
@@ -210,7 +210,7 @@ async function handleSearchByTags() {
   let combinedContents = '';
   for (const file of matchingFiles) {
     if (fs.existsSync(path.join(scriptPath, file.path))) {
-      const content = fs.readFileSync(file.path, 'utf8');
+      const content = fs.readFileSync(path.join(scriptPath, file.path), 'utf8');
       combinedContents += `=== ${file.path} ===\n\n${content}\n\n`;
     } else {
       combinedContents += `=== ${file.path} ===\n\nFile not found on disk.\n\n`;
